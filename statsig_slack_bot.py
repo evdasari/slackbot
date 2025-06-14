@@ -9,6 +9,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 import schedule
 import time
 import threading
+import pytz
 
 # Initialize Slack app
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
@@ -109,16 +110,17 @@ def format_weekly_metrics_message(weekly_metrics):
 
 def send_daily_report():
     """Send the daily metrics report"""
-    # Get yesterday's date
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # Use US/Pacific timezone for 'yesterday'
+    tz = pytz.timezone('US/Pacific')
+    now = datetime.now(tz)
+    yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+    print(f"Generating daily report for: {yesterday} (timezone: US/Pacific)")
 
-    # Fetch daily metrics
     daily_metrics = {}
     for metric in DAILY_METRICS:
         value = get_statsig_metric(metric, yesterday)
         daily_metrics[metric] = value
 
-    # Format and send the message
     message = format_metrics_message(daily_metrics, yesterday)
     app.client.chat_postMessage(
         channel="dailystats",
