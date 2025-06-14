@@ -51,15 +51,17 @@ def get_statsig_metric(metric_id, date):
     return 0
 
 def get_weekly_metrics():
-    """Fetch and aggregate metrics for the past 7 days"""
-    yesterday = datetime.now() - timedelta(days=1)
+    """Fetch and aggregate metrics for the past 7 days ending yesterday (Pacific time)"""
+    tz = pytz.timezone('US/Pacific')
+    now = datetime.now(tz)
+    yesterday = now - timedelta(days=1)
+    start_of_range = yesterday - timedelta(days=6)  # 7 days including yesterday
     weekly_metrics = {}
     
     for metric in WEEKLY_METRICS:
         total = 0
-        # Get data from yesterday back to 7 days before yesterday
         for i in range(7):
-            date = (yesterday - timedelta(days=i)).strftime("%Y-%m-%d")
+            date = (start_of_range + timedelta(days=i)).strftime("%Y-%m-%d")
             value = get_statsig_metric(metric, date)
             total += value
         weekly_metrics[metric] = total
@@ -91,10 +93,13 @@ def format_metrics_message(daily_metrics, date):
     return message
 
 def format_weekly_metrics_message(weekly_metrics):
-    """Format the weekly metrics into a Slack message"""
-    yesterday = datetime.now() - timedelta(days=1)
+    """Format the weekly metrics into a Slack message (Pacific time)"""
+    tz = pytz.timezone('US/Pacific')
+    now = datetime.now(tz)
+    yesterday = now - timedelta(days=1)
+    start_of_range = yesterday - timedelta(days=6)
     end_date = yesterday.strftime("%B %d")  # yesterday
-    start_date = (yesterday - timedelta(days=6)).strftime("%B %d")  # 7 days before yesterday
+    start_date = start_of_range.strftime("%B %d")  # 7 days before yesterday
     
     message = "*📈 Weekly Metrics Report*\n\n"
     message += f"*Period: {start_date} - {end_date}*\n\n"
