@@ -161,11 +161,11 @@ def handle_usage_report(ack, body, client):
         send_daily_report()
 
 if __name__ == "__main__":
-    # Schedule the daily report at whatever time you want
-    schedule.every().day.at("08:00").do(send_daily_report)
+    # Schedule the daily report at 16:00 UTC (8:00 AM Pacific)
+    schedule.every().day.at("16:00").do(send_daily_report)
     
-    # Schedule the weekly report for Fridays at 8:00 AM
-    schedule.every().friday.at("08:00").do(send_weekly_report)
+    # Schedule the weekly report for Fridays at 16:00 UTC (8:00 AM Pacific)
+    schedule.every().friday.at("16:00").do(send_weekly_report)
     
     # Start the scheduler in a separate thread
     scheduler_thread = threading.Thread(target=run_schedule)
