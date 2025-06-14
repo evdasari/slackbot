@@ -51,13 +51,14 @@ def get_statsig_metric(metric_id, date):
 
 def get_weekly_metrics():
     """Fetch and aggregate metrics for the past 7 days"""
-    today = datetime.now()
+    yesterday = datetime.now() - timedelta(days=1)
     weekly_metrics = {}
     
     for metric in WEEKLY_METRICS:
         total = 0
+        # Get data from yesterday back to 7 days before yesterday
         for i in range(7):
-            date = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+            date = (yesterday - timedelta(days=i)).strftime("%Y-%m-%d")
             value = get_statsig_metric(metric, date)
             total += value
         weekly_metrics[metric] = total
@@ -90,9 +91,9 @@ def format_metrics_message(daily_metrics, date):
 
 def format_weekly_metrics_message(weekly_metrics):
     """Format the weekly metrics into a Slack message"""
-    today = datetime.now()
-    end_date = (today - timedelta(days=1)).strftime("%B %d")  # yesterday
-    start_date = (today - timedelta(days=7)).strftime("%B %d")  # 7 days ago
+    yesterday = datetime.now() - timedelta(days=1)
+    end_date = yesterday.strftime("%B %d")  # yesterday
+    start_date = (yesterday - timedelta(days=6)).strftime("%B %d")  # 7 days before yesterday
     
     message = "*📈 Weekly Metrics Report*\n\n"
     message += f"*Period: {start_date} - {end_date}*\n\n"
@@ -108,16 +109,17 @@ def format_weekly_metrics_message(weekly_metrics):
 
 def send_daily_report():
     """Send the daily metrics report"""
-    today = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # Get yesterday's date
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
     # Fetch daily metrics
     daily_metrics = {}
     for metric in DAILY_METRICS:
-        value = get_statsig_metric(metric, today)
+        value = get_statsig_metric(metric, yesterday)
         daily_metrics[metric] = value
 
     # Format and send the message
-    message = format_metrics_message(daily_metrics, today)
+    message = format_metrics_message(daily_metrics, yesterday)
     app.client.chat_postMessage(
         channel="dailystats",
         text=message
@@ -153,10 +155,10 @@ def handle_usage_report(ack, body, client):
 
 if __name__ == "__main__":
     # Schedule the daily report at whatever time you want
-    schedule.every().day.at("12:45").do(send_daily_report)
+    schedule.every().day.at("08:00").do(send_daily_report)
     
-    # Schedule the weekly report for Fridays at 9:25 AM
-    schedule.every().friday.at("12:45").do(send_weekly_report)
+    # Schedule the weekly report for Fridays at 8:00 AM
+    schedule.every().friday.at("08:00").do(send_weekly_report)
     
     # Start the scheduler in a separate thread
     scheduler_thread = threading.Thread(target=run_schedule)
